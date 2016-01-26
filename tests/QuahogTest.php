@@ -76,21 +76,21 @@ class QuahogTest extends \PHPUnit_Framework_TestCase
     public function testScanFile()
     {
         $this->socket->expects($this->any())->method('read')->will(
-            $this->returnValue('/tmp/quahog/EICAR: Eicar-Test-Signature FOUND')
+          $this->returnValue('/tmp/quahog/EICAR: Eicar-Test-Signature FOUND')
         );
 
         $result = $this->quahog->scanFile('/tmp/quahog/EICAR');
 
         $this->assertSame(
-            array('filename' => '/tmp/quahog/EICAR', 'reason' => 'Eicar-Test-Signature', 'status' => 'FOUND'),
-            $result
+          array('filename' => '/tmp/quahog/EICAR', 'reason' => 'Eicar-Test-Signature', 'status' => 'FOUND'),
+          $result
         );
     }
 
     public function testMultiscanFile()
     {
         $this->socket->expects($this->any())->method('read')->will(
-            $this->returnValue('/tmp/quahog/EICAR: Eicar-Test-Signature FOUND')
+          $this->returnValue('/tmp/quahog/EICAR: Eicar-Test-Signature FOUND')
         );
 
         $result = $this->quahog->multiscanFile('/tmp/quahog');
@@ -102,42 +102,67 @@ class QuahogTest extends \PHPUnit_Framework_TestCase
     public function testContScan()
     {
         $this->socket->expects($this->any())->method('read')->will(
-            $this->returnValue('/tmp/quahog/EICAR: Eicar-Test-Signature FOUND')
+          $this->returnValue('/tmp/quahog/EICAR: Eicar-Test-Signature FOUND')
         );
 
         $result = $this->quahog->contScan('/tmp/quahog');
 
         $this->assertSame(
-            array('filename' => '/tmp/quahog/EICAR', 'reason' => 'Eicar-Test-Signature', 'status' => 'FOUND'),
-            $result
+          array('filename' => '/tmp/quahog/EICAR', 'reason' => 'Eicar-Test-Signature', 'status' => 'FOUND'),
+          $result
         );
     }
 
     public function testScanLocalFile()
     {
+        $file = tmpfile();
+        fwrite($file, 'Some test text to scan.');
+        $fileMeta = stream_get_meta_data($file);
+
         $this->socket->expects($this->any())->method('read')->will(
-            $this->returnValue('/tmp/quahog/EICAR: Eicar-Test-Signature FOUND')
+          $this->returnValue($fileMeta['uri'] . ': Eicar-Test-Signature FOUND')
         );
 
-        $result = $this->quahog->scanLocalFile('/tmp/quahog/EICAR');
+        $result = $this->quahog->scanLocalFile($fileMeta['uri']);
+
+        fclose($file);
 
         $this->assertSame(
-            array('filename' => '/tmp/quahog/EICAR', 'reason' => 'Eicar-Test-Signature', 'status' => 'FOUND'),
-            $result
+          array('filename' => $fileMeta['uri'], 'reason' => 'Eicar-Test-Signature', 'status' => 'FOUND'),
+          $result
         );
     }
 
     public function testScanStream()
     {
         $this->socket->expects($this->any())->method('read')->will(
-            $this->returnValue('stream: Eicar-Test-Signature FOUND')
+          $this->returnValue('stream: Eicar-Test-Signature FOUND')
         );
 
         $result = $this->quahog->scanStream('stream');
 
         $this->assertSame(
-            array('filename' => 'stream', 'reason' => 'Eicar-Test-Signature', 'status' => 'FOUND'),
-            $result
+          array('filename' => 'stream', 'reason' => 'Eicar-Test-Signature', 'status' => 'FOUND'),
+          $result
+        );
+    }
+
+    public function testScanResource()
+    {
+        $this->socket->expects($this->any())->method('read')->will(
+          $this->returnValue('stream: Eicar-Test-Signature FOUND')
+        );
+
+        $file = tmpFile();
+        fwrite($file, 'Some test text to scan.');
+
+        $result = $this->quahog->scanResource($file, 2);
+
+        fclose($file);
+
+        $this->assertSame(
+          array('filename' => 'stream', 'reason' => 'Eicar-Test-Signature', 'status' => 'FOUND'),
+          $result
         );
     }
 
